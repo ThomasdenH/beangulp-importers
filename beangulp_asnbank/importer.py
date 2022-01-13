@@ -3,12 +3,9 @@
 from os import path
 from typing import Dict, Optional, Tuple
 from beancount.core import data, number, position
-from beangulp.testing import main
 from beangulp.importers import csvbase
 import csv as pycsv
 import re
-import decimal
-import beangulp
 
 pycsv.register_dialect("asnbankdialect", delimiter=",")
 
@@ -17,6 +14,7 @@ class Importer(csvbase.Importer):
     encoding = "utf8"
     names = False
     dialect = "asnbankdialect"
+
 
     def __init__(
         self,
@@ -40,12 +38,16 @@ class Importer(csvbase.Importer):
             "balance_before": csvbase.Amount(8),
             "booking_code": csvbase.Column(14),
         }
-        super().__init__("asnbank", currency)
+        super().__init__("ACCOUNT_PLACEHOLDER", currency)
 
-    def filename(self, filepath):
+    def filename(self, filepath) -> str:
         return "asnbank." + path.basename(filepath)
 
-    def identify(remap, file):
+    def account(self, filepath: str) -> str:
+        for row in self.read(filepath):
+            return self.known_accounts[row.own_account]
+
+    def identify(remap, file) -> bool:
         with open(file) as fd:
             head = fd.read(1024)
         return not re.search("^\d\d-\d\d-\d\d\d\d,", head) is None
@@ -123,7 +125,7 @@ class Importer(csvbase.Importer):
             regex = "^Voor\s+u\s+([a-z]+kocht)\s+via\s+Euronext\s+Fund\s+Services:\s+(\d+ \d+)\s+Participaties\s+(.*)\s+a\s+EUR\s+(\d+ \d+)."
             result = re.match(regex, transaction.narration)
             profit_loss = False
-            if not result == None:
+            if result != None:
                 transaction_type = result.group(1)
                 share_amount = number.D(result.group(2).replace(" ", "."))
                 share_type = result.group(3).replace(" ", "")

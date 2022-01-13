@@ -157,3 +157,12 @@ class TestAsnBank(cmptest.TestCase):
         entries = asnbank_importer.deduplicate(entries, existing_entries)
 
         assert entries[1].meta[DUPLICATE] == True
+
+    # Test whether the account is discovered correctly
+    @docfile
+    def test_account_name(self, filename: str) -> None:
+        """\
+09-01-2022,IBAN_CHEQUING,IBAN_SAVINGS,name,,,,EUR,50.21,EUR,10.00,09-01-2022,09-01-2022,1234,IOB,12345678,,GEEN,1
+        """
+        asnbank_importer = importer.Importer(accounts)
+        self.assertEqual(asnbank_importer.account(filename), accounts['IBAN_CHEQUING'])
