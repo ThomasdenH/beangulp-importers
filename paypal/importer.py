@@ -1,6 +1,7 @@
 from enum import Enum
 from os import path
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
+from xmlrpc.client import Boolean
 from beancount.core import data
 from beangulp.testing import main
 from beangulp.importers import csvbase
@@ -32,7 +33,7 @@ class MergeType(Enum):
 pycsv.register_dialect("paypaldialect", delimiter=",")
 
 class CommaAmount(csvbase.Column):
-    def parse(self, value):
+    def parse(self, value: str):
         return number.D(value.replace(",", "."))
 
 
@@ -58,16 +59,16 @@ class Importer(csvbase.Importer):
         self.bank_account = bank_account
         super().__init__(account, base_currency)
 
-    def filename(self, filepath):
+    def filename(self, filepath: str) -> str:
         return "paypal." + path.basename(filepath)
 
-    def identify(remap, file):
+    def identify(remap, file: str) -> Boolean:
         f = open(file)
         is_correct = path.basename(f.name) == "Download.CSV"
         f.close()
         return is_correct
 
-    def extract(self, filepath, existing):
+    def extract(self, filepath: str, existing: List[Any]) -> List[Any]:
         entries = super().extract(filepath, existing)
         read = self.read(filepath)
 
@@ -253,7 +254,3 @@ class Importer(csvbase.Importer):
                 )
 
         return new_entries
-
-
-if __name__ == "__main__":
-    main(Importer("Assets:Paypal", "EUR"))
