@@ -1,6 +1,11 @@
 # beangulp-importers
 This repository contains some beangulp importers. They were created for my own use, but it should be easier to start from here for your own situation. If you have any bugs or improvements, let me know.
 
+Current importers:
+- ASN-bank (https://www.asnbank.nl/)
+- Paypal (https://www.paypal.com/)
+- OV-chipkaart (https://www.ov-chipkaart.nl/)
+
 ## License
 
 Licensed under either of
