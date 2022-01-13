@@ -20,7 +20,7 @@ english = {
     "amount": "Net",
     "balance": "Balance",
     "subject": "Subject",
-    "bank_transfer": ["Bank Deposit to PP Account", "Algemene opname"], # < Translate
+    "bank_transfer": ["Bank Deposit to PP Account", "Algemene opname"], # TODO: < Translate
     "general_currency_conversion": "General Currency Conversion",
     "transaction_id": "Transaction ID",
     "reference_transaction_id": "Reference Txn ID"
