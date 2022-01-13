@@ -1,12 +1,9 @@
 from enum import Enum
 from os import path
-from typing import Any, Dict, List, Optional
-from xmlrpc.client import Boolean
-from beancount.core import data
-from beangulp.testing import main
+from typing import Any, List, Optional
+from beancount.core import data, number
 from beangulp.importers import csvbase
 import csv as pycsv
-from beancount.core import number
 from beancount.core.position import CostSpec
 import datetime
 
@@ -20,17 +17,23 @@ english = {
     "amount": "Net",
     "balance": "Balance",
     "subject": "Subject",
-    "bank_transfer": ["Bank Deposit to PP Account", "Algemene opname"], # TODO: < Translate
+    "bank_transfer": [
+        "Bank Deposit to PP Account",
+        "Algemene opname",
+    ],  # TODO: < Translate
     "general_currency_conversion": "General Currency Conversion",
     "transaction_id": "Transaction ID",
-    "reference_transaction_id": "Reference Txn ID"
+    "reference_transaction_id": "Reference Txn ID",
 }
+
 
 class MergeType(Enum):
     BANK_TRANSFER = 0
     CURRENCY_CONVERSION = 1
 
+
 pycsv.register_dialect("paypaldialect", delimiter=",")
+
 
 class CommaAmount(csvbase.Column):
     def parse(self, value: str):
@@ -55,14 +58,16 @@ class Importer(csvbase.Importer):
     transaction_id = csvbase.Column(lang["transaction_id"])
     reference_transaction_id = csvbase.Column(lang["reference_transaction_id"])
 
-    def __init__(self, base_currency: str, account: str, bank_account: Optional[str]) -> None:
+    def __init__(
+        self, base_currency: str, account: str, bank_account: Optional[str]
+    ) -> None:
         self.bank_account = bank_account
         super().__init__(account, base_currency)
 
     def filename(self, filepath: str) -> str:
         return "paypal." + path.basename(filepath)
 
-    def identify(remap, file: str) -> Boolean:
+    def identify(remap, file: str) -> bool:
         f = open(file)
         is_correct = path.basename(f.name) == "Download.CSV"
         f.close()
@@ -96,7 +101,10 @@ class Importer(csvbase.Importer):
                     elif next_row.typ == self.lang["general_currency_conversion"]:
                         merges.append(MergeType.CURRENCY_CONVERSION)
                     else:
-                        print('unsupported transaction type that references a previous transaction:', next_row.typ)
+                        print(
+                            "unsupported transaction type that references a previous transaction:",
+                            next_row.typ,
+                        )
 
                     entry = entry._replace(
                         postings=entry.postings + next_entry.postings
@@ -105,13 +113,13 @@ class Importer(csvbase.Importer):
 
             # If there bank transfer immediately after, add this to the posting.
             # Later on, simplify to leave the account intact.
-            #if i + 1 < len(iter):
+            # if i + 1 < len(iter):
             #    next_entry, next_row = iter[i + 1]
             #    if (
             #        next_row.typ in self.lang["bank_transfer"]
             #        and next_row.reference_transaction_id == row.transaction_id
             #    ):
-                    # Add the posting to the existing transaction.
+            # Add the posting to the existing transaction.
             #        entry = entry._replace(
             #            postings=entry.postings + next_entry.postings
             #        )
@@ -119,7 +127,7 @@ class Importer(csvbase.Importer):
             #        has_bank_transfer = True
 
             # Similarly for currency conversions
-            #if i + 2 < len(iter):
+            # if i + 2 < len(iter):
             #    next_entry_1, next_row_1 = iter[i + 1]
             #    next_entry_2, next_row_2 = iter[i + 2]
             #    if (
@@ -129,24 +137,24 @@ class Importer(csvbase.Importer):
             #    ):
             #        postings = [next_entry_1.postings[0], next_entry_2.postings[0]]
 
-             #       if postings[0][1][1] != self.currency:
-              #          postings = [entries[i + 1].postings[0], entries[i].postings[0]]
+            #       if postings[0][1][1] != self.currency:
+            #          postings = [entries[i + 1].postings[0], entries[i].postings[0]]
 
-             #       cost_number_total = -postings[0][1][0]
-             #       cost_currency = postings[0][1][1]
-             #       postings[1] = postings[1]._replace(
-             #           cost=CostSpec(
-             #               None, cost_number_total, cost_currency, None, None, None
-             #           )
-             #       )
+            #       cost_number_total = -postings[0][1][0]
+            #       cost_currency = postings[0][1][1]
+            #       postings[1] = postings[1]._replace(
+            #           cost=CostSpec(
+            #               None, cost_number_total, cost_currency, None, None, None
+            #           )
+            #       )
 
-              #      entry = entry._replace(postings=entry.postings + postings)
+            #      entry = entry._replace(postings=entry.postings + postings)
 
-                #    i += 2
-             #       has_currency_conversion = True
+            #    i += 2
+            #       has_currency_conversion = True
 
             # Now we can have a single transaction with a lot of postings. Simplify.
-            #if has_bank_transfer and (has_currency_conversion or has_expense):
+            # if has_bank_transfer and (has_currency_conversion or has_expense):
             #    # First of all, try to see if added balance was removed immediately.
             #    new_balance_posting_index = len(new_entry.postings) - 4
             #    new_balance_remove_index = 0
@@ -161,38 +169,37 @@ class Importer(csvbase.Importer):
             #        ]
             #    )
 
-            #if has_currency_conversion and has_expense:
-                # Now, move the cost spec to the actual expenses if the transaction is complete. The first and last entry should be removed, and the
-                # cost should be moved from the last to the second (which will become the first.)
+            # if has_currency_conversion and has_expense:
+            # Now, move the cost spec to the actual expenses if the transaction is complete. The first and last entry should be removed, and the
+            # cost should be moved from the last to the second (which will become the first.)
             #    first_index = 0
             #    last_index = len(new_entry.postings) - 1
             #    new_entry.postings[1] = new_entry.postings[1]._replace(
             #        cost=new_entry.postings[last_index][2]
-             #   )
-             #   new_entry = new_entry._replace(
-             #       postings=[
-             #           posting
-             #           for (index, posting) in enumerate(new_entry.postings)
-             #           if not index in [first_index, last_index]
-             #       ]
-             #   )
-
+            #   )
+            #   new_entry = new_entry._replace(
+            #       postings=[
+            #           posting
+            #           for (index, posting) in enumerate(new_entry.postings)
+            #           if not index in [first_index, last_index]
+            #       ]
+            #   )
 
             # Add an expense posting from the first transaction.
             paypal_account_posting = entry.postings[0]
             first_entry = paypal_account_posting._replace(
                 # TODO: For clarity, use Income when money is coming in.
-                account = 'Expenses:UnknownAccount',
-                units = -paypal_account_posting.units
+                account="Expenses:UnknownAccount",
+                units=-paypal_account_posting.units,
             )
-            entry = entry._replace(
-                postings = [first_entry] + entry.postings[1:]
-            )
+            entry = entry._replace(postings=[first_entry] + entry.postings[1:])
 
             # If there was not a bank transfer, the money is coming from the paypal account. Add this posting (use the orinal posting).
             if not MergeType.BANK_TRANSFER in merges:
                 entry = entry._replace(
-                    postings = entry.postings[:1] + [paypal_account_posting] + entry.postings[1:]
+                    postings=entry.postings[:1]
+                    + [paypal_account_posting]
+                    + entry.postings[1:]
                 )
 
             # The first transaction is the primary transaction. The others should be merged
@@ -209,12 +216,14 @@ class Importer(csvbase.Importer):
                         None,
                     )
                     entry = entry._replace(
-                            postings=entry.postings[:-1] + [bank_transfer_posting]
-                        )
+                        postings=entry.postings[:-1] + [bank_transfer_posting]
+                    )
                     merges = merges[:-1]
                 elif merges[-1] == MergeType.CURRENCY_CONVERSION:
                     # Assume each currency conversion comes in pairs.
-                    assert len(merges) >= 2 and merges[-2] == MergeType.CURRENCY_CONVERSION
+                    assert (
+                        len(merges) >= 2 and merges[-2] == MergeType.CURRENCY_CONVERSION
+                    )
 
                     # The bottom two postings correspond to the conversion.
 
@@ -229,14 +238,17 @@ class Importer(csvbase.Importer):
                     # Add the cost spec
                     entry.postings[0] = entry.postings[0]._replace(
                         cost=CostSpec(
-                            None, -entry.postings[-2].units[0], self.currency, None, None, None
+                            None,
+                            -entry.postings[-2].units[0],
+                            self.currency,
+                            None,
+                            None,
+                            None,
                         )
                     )
 
                     # Remove the currency conversions.
-                    entry = entry._replace(
-                        postings = entry.postings[:-2]
-                    )
+                    entry = entry._replace(postings=entry.postings[:-2])
 
                     merges = merges[:-2]
 
@@ -248,7 +260,7 @@ class Importer(csvbase.Importer):
             if row.balance_unreg is not None:
                 date = row.date + datetime.timedelta(days=1)
                 units = data.Amount(row.balance_unreg, self.currency)
-                meta = data.new_metadata(filepath, entry.meta['lineno'])
+                meta = data.new_metadata(filepath, entry.meta["lineno"])
                 new_entries.append(
                     data.Balance(meta, date, self.account(filepath), units, None, None)
                 )
