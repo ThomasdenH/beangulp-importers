@@ -1,4 +1,5 @@
-from paypal import importer
+from typing import Optional
+from beangulp_paypal import importer
 
 import unittest
 
@@ -87,6 +88,34 @@ class TestPaypal(cmptest.TestCase):
 """
 
         self.assertEqual(actual, expected)
+
+    @docfile
+    def test_inheritance(self, filename: str) -> None:
+        """\
+"Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Reference Txn ID","Receipt ID","Balance","Subject"
+"10/12/2020","13:54:37","PST","Movie Distributor","Express Checkout Payment","Completed","EUR","-30,00","0,00","-30,00","email@address.com","anotheremail@address.com","253285736","","","-30,00","Transaction subject"
+        """
+
+        class Importer(importer.Importer):
+            def finalize(self, txn, row):
+                if row.payee == "Movie Distributor":
+                    txn.postings[0] = txn.postings[0]._replace(
+                        account="Expenses:Movies"
+                    )
+                return txn
+
+        paypal_importer = Importer("EUR", "Assets:Paypal", "Liabilities:DirectDebit")
+        entries = paypal_importer.extract(filename, [])
+        self.assertEqualEntries(
+            entries,
+            """         
+            2020-12-10 * "Movie Distributor" "Transaction subject"
+                Expenses:Movies   30.00 EUR
+                Assets:Paypal    -30.00 EUR
+
+            2020-12-11 balance Assets:Paypal                                   -30.00 EUR
+        """,
+        )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from ovchipkaart import importer
+from beangulp_ovchipkaart import importer
 
 from beancount.parser import cmptest
 from beancount.utils.test_utils import docfile

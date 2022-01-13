@@ -1,7 +1,6 @@
 from os import path
 from turtle import pos
 from typing import Optional
-from beangulp.testing import main
 from beangulp.importers import csvbase
 import csv as pycsv
 from beancount.core import number, data

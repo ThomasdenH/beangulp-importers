@@ -8,7 +8,7 @@ Please set your language to 'English' (currently the only supported language but
 - Transaction details - PayPal Balance
 - Transaction details - Subject
 
-In order to automatically set entries, filter for 
+In order to automatically set entries, you can extend the class and use the finalize method. However, you should be careful. Finalizing happens before transaction merging, so you will see more transactions in some cases.
 
 ## Contribution
 
