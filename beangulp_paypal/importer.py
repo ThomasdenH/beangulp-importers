@@ -25,8 +25,6 @@ english = {
     "reference_transaction_id": "Reference Txn ID",
 }
 
-lang = english
-
 
 class MergeType(Enum):
     BANK_TRANSFER = 0
@@ -45,10 +43,12 @@ class Importer(csvbase.Importer):
     encoding = "utf-8-sig"
     dialect = "paypaldialect"
 
-    lang = english
-
     def __init__(
-        self, base_currency: str, account: str, bank_account: Optional[str]
+        self,
+        base_currency: str,
+        account: str,
+        bank_account: Optional[str],
+        lang=english,
     ) -> None:
         self.columns = {
             "date": csvbase.Date(lang["date"], "%d/%m/%Y"),

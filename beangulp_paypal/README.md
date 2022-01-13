@@ -8,7 +8,17 @@ Please set your language to 'English' (currently the only supported language but
 - Transaction details - PayPal Balance
 - Transaction details - Subject
 
-In order to automatically set entries, you can extend the class and use the finalize method. However, you should be careful. Finalizing happens before transaction merging, so you will see more transactions in some cases.
+In order to automatically set entries, you can extend the class and use the finalize method. However, you should be careful. Finalizing happens before transaction merging, so you will see more transactions in some cases. Example that works:
+
+```python
+class Importer(importer.Importer):
+    def finalize(self, txn, row):
+        if row.payee == "Movie Distributor":
+            txn.postings[0] = txn.postings[0]._replace(
+                account="Expenses:Movies"
+            )
+        return txn
+```
 
 ## Contribution
 
