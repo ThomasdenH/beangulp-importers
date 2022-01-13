@@ -1,0 +1,12 @@
+.gitignore
+pyproject.toml
+setup.cfg
+beangulp_importers.egg-info/PKG-INFO
+beangulp_importers.egg-info/SOURCES.txt
+beangulp_importers.egg-info/dependency_links.txt
+beangulp_importers.egg-info/requires.txt
+beangulp_importers.egg-info/top_level.txt
+paypal/README.md
+paypal/__init__.py
+paypal/importer.py
+paypal/tests.py
