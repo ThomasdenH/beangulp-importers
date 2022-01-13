@@ -4,7 +4,7 @@ from beancount.parser import cmptest
 from beancount.utils.test_utils import docfile
 
 
-class TestPaypal(cmptest.TestCase):
+class TestOvchipkaart(cmptest.TestCase):
     @docfile
     def test_topup_transaction(self, filename: str) -> None:
         """\

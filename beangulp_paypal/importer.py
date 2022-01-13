@@ -50,6 +50,7 @@ class Importer(csvbase.Importer):
         bank_account: Optional[str],
         lang=english,
     ) -> None:
+        self.lang = lang
         self.columns = {
             "date": csvbase.Date(lang["date"], "%d/%m/%Y"),
             "payee": csvbase.Column(lang["name"]),
