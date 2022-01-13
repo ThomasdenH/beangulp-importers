@@ -1,13 +1,14 @@
 #! Code voor een ASN betaalrekening
 
 from os import path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 from beancount.core import data, number, position
 from beangulp.testing import main
 from beangulp.importers import csvbase
 import csv as pycsv
 import re
 import decimal
+import beangulp
 
 pycsv.register_dialect("asnbankdialect", delimiter=",")
 
@@ -19,24 +20,27 @@ class Importer(csvbase.Importer):
 
     def __init__(
         self,
-        account: str,
+        known_accounts: Dict[str, str],
         currency: str = "EUR",
         interest_account: Optional[str] = None,
         investment_account: Optional[str] = None,
         profit_loss_account: Optional[str] = None,
     ) -> None:
+        self.known_accounts = known_accounts
         self.interest_account = interest_account
         self.investment_account = investment_account
         self.profit_loss_account = profit_loss_account
         self.columns = {
             "date": csvbase.Date(0, "%d-%m-%Y"),
+            "own_account": csvbase.Column(1),
+            "other_account": csvbase.Column(2),
             "payee": csvbase.Column(3),
             "amount": csvbase.Amount(10),
             "narration": csvbase.Column(17),
             "balance_before": csvbase.Amount(8),
             "booking_code": csvbase.Column(14),
         }
-        super().__init__(account, currency)
+        super().__init__("asnbank", currency)
 
     def filename(self, filepath):
         return "asnbank." + path.basename(filepath)
@@ -46,7 +50,7 @@ class Importer(csvbase.Importer):
             head = fd.read(1024)
         return not re.search("^\d\d-\d\d-\d\d\d\d,", head) is None
 
-    def extract(self, filepath, existing):
+    def extract(self, filepath, existing) -> data.Entries:
         entries = super().extract(filepath, existing)
 
         # Build a balance entry. The balance is not after but before, so this requires custom code.
@@ -60,7 +64,7 @@ class Importer(csvbase.Importer):
             units = data.Amount(row.balance_before, self.currency)
             meta = data.new_metadata(filepath, lineno)
             balance = data.Balance(
-                meta, date, self.account(filepath), units, None, None
+                meta, date, self.known_accounts[row.own_account], units, None, None
             )
 
             # Now insert at the correct location
@@ -75,11 +79,29 @@ class Importer(csvbase.Importer):
         return entries
 
     def finalize(self, transaction, row):
-        # Fix extra quotes
-        transaction = transaction._replace(narration=transaction.narration[1:-1])
+        # Set the account number
+        transaction.postings[0] = transaction.postings[0]._replace(
+            account=self.known_accounts[row.own_account]
+        )
 
+        # Fix extra quotes
+        if transaction.narration != "GEEN":
+            transaction = transaction._replace(narration=transaction.narration[1:-1])
+
+        # Add known accounts as a posting
+        if row.other_account in self.known_accounts.keys():
+            transaction.postings.append(
+                data.Posting(
+                    self.known_accounts[row.other_account],
+                    -transaction.postings[0].units,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            )
         # Handle interest posting
-        if self.interest_account != None and row.booking_code == "RNT":
+        elif self.interest_account != None and row.booking_code == "RNT":
             transaction.postings.append(
                 data.Posting(
                     self.interest_account,
