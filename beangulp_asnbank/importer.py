@@ -15,7 +15,6 @@ class Importer(csvbase.Importer):
     names = False
     dialect = "asnbankdialect"
 
-
     def __init__(
         self,
         known_accounts: Dict[str, str],

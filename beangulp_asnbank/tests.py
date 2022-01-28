@@ -165,4 +165,4 @@ class TestAsnBank(cmptest.TestCase):
 09-01-2022,IBAN_CHEQUING,IBAN_SAVINGS,name,,,,EUR,50.21,EUR,10.00,09-01-2022,09-01-2022,1234,IOB,12345678,,GEEN,1
         """
         asnbank_importer = importer.Importer(accounts)
-        self.assertEqual(asnbank_importer.account(filename), accounts['IBAN_CHEQUING'])
+        self.assertEqual(asnbank_importer.account(filename), accounts["IBAN_CHEQUING"])
