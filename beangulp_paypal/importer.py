@@ -113,6 +113,8 @@ class Importer(csvbase.Importer):
                         postings=entry.postings + next_entry.postings
                     )
                     i += 1
+                else:
+                    break
 
             # Add an expense posting, derive from the first transaction.
             paypal_account_posting = entry.postings[0]

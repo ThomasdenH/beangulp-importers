@@ -35,6 +35,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -74,6 +75,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -112,6 +114,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -149,6 +152,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -186,6 +190,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -225,6 +230,7 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
             earn_income_account="Income:CoinbaseEarn",
             pl_income_account="Income:PL",
             fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
         )
         entries = coinbase_importer.extract(filename, [])
         output = StringOutput()
@@ -242,6 +248,45 @@ Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Pr
   Income:PL
   Assets:Coinbase:EUR      102.00 EUR
   Expenses:TradingFees       2.00 EUR
+
+
+""",
+        )
+
+    @docfile
+    def test_rewards_income(self, filename: str) -> None:
+        """\
+"You can use this transaction report to inform your likely tax obligations. For US customers, Sells, Converts, and Rewards Income, and Coinbase Earn transactions are taxable events. For final tax obligations, please consult your tax advisor."
+
+
+
+Transactions
+User,email@address.com,0000000000
+
+Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Price at Transaction,Subtotal,Total (inclusive of fees),Fees,Notes
+2022-01-28T00:00:00Z,Rewards Income,DAI,0.880000,EUR,0.8800000,1.000000,0.8800000,0.000000,Received 1.000000000 DAI from Coinbase Rewards
+"""
+        coinbase_importer = importer.Importer(
+            coinbase_assets_base="Assets:Coinbase",
+            earn_income_account="Income:CoinbaseEarn",
+            pl_income_account="Income:PL",
+            fees_expenses="Expenses:TradingFees",
+            rewards_income_account="Income:CoinbaseRewards"
+        )
+        entries = coinbase_importer.extract(filename, [])
+        output = StringOutput()
+        extract.print_extracted_entries([["filepath", entries]], output)
+        actual = output.s
+        self.assertEqual(
+            actual,
+            """\
+;; -*- mode: beancount -*-
+
+**** filepath
+
+2022-01-28 * "Received 1.000000000 DAI from Coinbase Rewards"
+  Assets:Coinbase:DAI       0.880000 DAI {# 0.8800000 EUR} @ 0.8800000 EUR
+  Income:CoinbaseRewards  -0.8800000 EUR
 
 
 """,

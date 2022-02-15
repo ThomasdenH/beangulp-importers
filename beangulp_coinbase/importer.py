@@ -48,12 +48,14 @@ class Importer(csvbase.Importer):
         earn_income_account: str,
         pl_income_account: str,
         fees_expenses: str,
+        rewards_income_account: str,
         currency: str = "EUR",
     ) -> None:
         self.earn_income_account = earn_income_account
         self.pl_income_account = pl_income_account
         self.coinbase_assets_base = coinbase_assets_base
         self.fees_expenses = fees_expenses
+        self.rewards_income_account = rewards_income_account
         super().__init__(coinbase_assets_base, currency)
 
     def filename(self, filepath):
@@ -135,6 +137,18 @@ class Importer(csvbase.Importer):
             transaction.postings.append(
                 data.Posting(
                     self.earn_income_account,
+                    -data.Amount(row.total_with_fees, row.spot_price_currency),
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            )
+        elif row.transaction_type == "Rewards Income":
+            # Add the earning in the base currency.
+            transaction.postings.append(
+                data.Posting(
+                    self.rewards_income_account,
                     -data.Amount(row.total_with_fees, row.spot_price_currency),
                     None,
                     None,
