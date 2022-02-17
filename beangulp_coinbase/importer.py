@@ -22,6 +22,7 @@ class PotentiallyEmptyAmount(csvbase.Column):
             return number.D("0.00")
         return decimal.Decimal(value)
 
+
 class Importer(csvbase.Importer):
     encoding = "utf8"
     names = True
@@ -92,7 +93,9 @@ class Importer(csvbase.Importer):
                 primary_cost = row.subtotal
             else:
                 primary_cost = row.total_with_fees
-            cost_spec = CostSpec(None, primary_cost, row.spot_price_currency, None, None, None)
+            cost_spec = CostSpec(
+                None, primary_cost, row.spot_price_currency, None, None, None
+            )
         # Finally, if we want a cost but it isn't available, use the spot price.
         # To avoid clutter, remove the price entry as it is identical.
         elif not row.spot_price_at_transaction.is_zero():
@@ -121,7 +124,9 @@ class Importer(csvbase.Importer):
             to_units = number.D(matches[1])
             to_currency = matches[2]
             to_amount = data.Amount(to_units, to_currency)
-            to_cost_spec = CostSpec(None, row.subtotal, row.spot_price_currency, None, None, None)
+            to_cost_spec = CostSpec(
+                None, row.subtotal, row.spot_price_currency, None, None, None
+            )
             transaction.postings.append(
                 data.Posting(
                     self.coinbase_account_for_asset(to_currency),
@@ -145,12 +150,12 @@ class Importer(csvbase.Importer):
                 )
             )
         elif row.transaction_type == "Rewards Income":
-            # Add the earning in the base currency.
+            # Since this is interest, express income in the same currency.
             transaction.postings.append(
                 data.Posting(
                     self.rewards_income_account,
-                    -data.Amount(row.total_with_fees, row.spot_price_currency),
-                    None,
+                    -transaction.postings[0][1],  # Amount
+                    transaction.postings[0][2],  # Cost
                     None,
                     None,
                     None,
